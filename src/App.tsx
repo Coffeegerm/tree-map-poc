@@ -3,24 +3,17 @@ import { useMemo } from "react";
 import { data, Tree } from "./data";
 import * as d3 from "d3";
 
-const colors = [
-  "#e0ac2b",
-  "#6689c6",
-  "#a4c969",
-  "#e85252",
-  "#9a6fb0",
-  "#a53253",
-  "#7f7f7f",
-];
-
-const width = 800;
-const height = 600;
+const margin = { top: 50, right: 20, bottom: 20, left: 20 };
+const width = 1280 - margin.left - margin.right;
+const height = 800 - margin.top - margin.bottom;
 
 const treeFactory = d3
   .treemap<Tree>()
   .size([width, height])
   .padding(4)
   .paddingTop(20);
+
+const color = d3.scaleSequential([12, 0], d3.interpolateMagma);
 
 function App() {
   /**
@@ -35,14 +28,6 @@ function App() {
 
   console.log("data and hierarchy", { data, hierarchy });
 
-  // List of item of level 1 (just under root) & related color scale
-  const firstLevelGroups =
-    hierarchy?.children?.map((child) => child.data.name) || [];
-  const colorScale = d3
-    .scaleOrdinal<string>()
-    .domain(firstLevelGroups)
-    .range(colors);
-
   /**
    * Generate actual tree map based on hierarchy provided
    */
@@ -51,46 +36,13 @@ function App() {
   console.log("root", root);
 
   /**
-   * Render leafs of the tree map based on data provided in leaf
+   * Render leafs of the tree map based on data provided in leaf or node
+   * if a node we will try to iterate over its children to render them within the bounding box of the node
+   * to show the hierarchy of the tree map
    */
-
-  const allShapes = root.leaves().map((leaf) => {
-    const parentOrSelfName =
-      leaf.depth > 1 ? leaf.parent?.data.name : leaf.data.name;
-
-    return (
-      <g key={leaf.id} className="rectangle">
-        <rect
-          x={leaf.x0}
-          y={leaf.y0}
-          width={leaf.x1 - leaf.x0}
-          height={leaf.y1 - leaf.y0}
-          stroke="transparent"
-          fill={colorScale(parentOrSelfName || "")}
-        />
-        <text
-          x={leaf.x0 + 3}
-          y={leaf.y0 + 3}
-          fontSize={12}
-          textAnchor="start"
-          alignmentBaseline="hanging"
-          fill="white"
-        >
-          {leaf.data.name}
-        </text>
-        <text
-          x={leaf.x0 + 3}
-          y={leaf.y0 + 18}
-          fontSize={12}
-          textAnchor="start"
-          alignmentBaseline="hanging"
-          fill="white"
-        >
-          {leaf.data.value}
-        </text>
-      </g>
-    );
-  });
+  const nestedShapes = root.children?.map((leafOrNode) => (
+    <NodeOrLeaf leafOrNode={leafOrNode} />
+  ));
 
   return (
     <>
@@ -102,16 +54,103 @@ function App() {
           */}
           <g key="parent">
             <rect fill={"white"} width={width} height={height} />
-            <text textAnchor="start" x={root.x0 + 8} y={root.y0 + 24}>
+            <text textAnchor="start" x={root.x0 + 8} y={root.y0 + 20}>
               {root.data.name} ({root.value})
             </text>
           </g>
 
-          {allShapes}
+          {nestedShapes}
         </svg>
       </div>
     </>
   );
 }
+
+const NodeOrLeaf = ({
+  leafOrNode,
+}: {
+  leafOrNode: d3.HierarchyRectangularNode<Tree>;
+}) => {
+  // if leaf, render the rectangle for the leaf itself
+
+  // if a node we need to render the rectangle for the node
+  // and then iterate over its children within the node to render the leafs themselves
+
+  if (leafOrNode.data.type === "leaf") {
+    return (
+      <g key={leafOrNode.id} className="rectangle">
+        <rect
+          x={leafOrNode.x0}
+          y={leafOrNode.y0}
+          width={leafOrNode.x1 - leafOrNode.x0}
+          height={leafOrNode.y1 - leafOrNode.y0}
+          stroke="transparent"
+          fill={color(leafOrNode.height)}
+        />
+        <text
+          x={leafOrNode.x0 + 3}
+          y={leafOrNode.y0 + 3}
+          fontSize={12}
+          textAnchor="start"
+          alignmentBaseline="hanging"
+          fill="black"
+        >
+          {leafOrNode.data.name}
+        </text>
+        <text
+          x={leafOrNode.x0 + 3}
+          y={leafOrNode.y0 + 18}
+          fontSize={12}
+          textAnchor="start"
+          alignmentBaseline="hanging"
+          fill="black"
+        >
+          {leafOrNode.data.value}
+        </text>
+      </g>
+    );
+  } else if (leafOrNode.data.type === "node") {
+    return (
+      <g key={leafOrNode.id} className="rectangle">
+        <rect
+          x={leafOrNode.x0}
+          y={leafOrNode.y0}
+          width={leafOrNode.x1 - leafOrNode.x0}
+          height={leafOrNode.y1 - leafOrNode.y0}
+          stroke="transparent"
+          fill={color(leafOrNode.height)}
+          style={{ borderRadius: "10px" }}
+        />
+        <text
+          x={leafOrNode.x0 + 3}
+          y={leafOrNode.y0 + 3}
+          fontSize={12}
+          textAnchor="start"
+          alignmentBaseline="hanging"
+          fill="black"
+        >
+          {leafOrNode.data.name}
+        </text>
+        <text
+          x={leafOrNode.x0 + 3}
+          y={leafOrNode.y0 + 18}
+          fontSize={12}
+          textAnchor="start"
+          alignmentBaseline="hanging"
+          fill="black"
+        >
+          {leafOrNode.data.value}{" "}
+          {leafOrNode.data.value ? `(${leafOrNode.data.value})` : ""}
+        </text>
+        {
+          // iterate over the children of the node to render the leafs within the same box
+          leafOrNode.children?.map((leafOrNodeChild) => {
+            return <NodeOrLeaf leafOrNode={leafOrNodeChild} />;
+          })
+        }
+      </g>
+    );
+  }
+};
 
 export default App;

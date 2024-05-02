@@ -16,6 +16,7 @@ export const data: Tree = {
   type: "node",
   name: "Urban Wonders",
   children: [
+    // sales only has a few people in it, these are their eNPS scores for their direct reports
     {
       type: "node",
       name: "Sales",
@@ -37,7 +38,17 @@ export const data: Tree = {
         {
           type: "node",
           name: "Response Team",
-          children: [{ type: "leaf", name: "SRE's", value: 98 }],
+          children: [
+            {
+              type: "node",
+              name: "SRE's",
+              children: [
+                { type: "leaf", name: "Alice", value: 12 },
+                { type: "leaf", name: "Bob", value: 12 },
+                { type: "leaf", name: "Charlie", value: 12 },
+              ],
+            },
+          ],
         },
         { type: "leaf", name: "Growth", value: 22 },
         { type: "leaf", name: "Feature", value: 12 },
@@ -51,7 +62,17 @@ export const data: Tree = {
     {
       type: "node",
       name: "People Ops",
-      children: [{ type: "leaf", name: "Relations", value: 23 }],
+      children: [
+        { type: "leaf", name: "Relations", value: 23 },
+        {
+          type: "node",
+          name: "HR",
+          children: [
+            { type: "leaf", name: "Recruitment", value: 23 },
+            { type: "leaf", name: "Training", value: 23 },
+          ],
+        },
+      ],
     },
   ],
 };
