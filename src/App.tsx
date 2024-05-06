@@ -1,9 +1,9 @@
-import "./App.css";
+import { BarChart } from "./BarChart";
 
 function App() {
   return (
     <>
-      <div>Tree Map</div>
+      <BarChart />
     </>
   );
 }
